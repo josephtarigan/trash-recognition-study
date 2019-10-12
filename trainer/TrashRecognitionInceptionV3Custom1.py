@@ -5,14 +5,14 @@ joseph.tarigan@gmail.com
 import os
 
 import matplotlib.pyplot as plt
-
 from keras.applications.inception_v3 import InceptionV3
-from keras.layers import GlobalAveragePooling2D, Dropout, Dense
+from keras.callbacks import TensorBoard, ModelCheckpoint
+from keras.layers import GlobalAveragePooling2D, Dropout, Dense, Input
 from keras.models import Model
-from keras.callbacks import TensorBoard
-from keras.optimizers import RMSprop
-from trainer.util import DatasetUtil
 from tensorflow.python.lib.io import file_io
+
+from trainer.util import DatasetUtil
+from trainer.util import ModelCheckpointGc
 
 ## Global Variables
 CLASSES = 6
@@ -23,7 +23,8 @@ inception v3 base model
 
 
 def create_base_model():
-    return InceptionV3(include_top=False, weights='imagenet')
+    input_tensor = Input(shape=(244, 244, 3))
+    return InceptionV3(input_tensor=input_tensor, include_top=False, weights='imagenet')
 
 
 '''
@@ -36,7 +37,8 @@ def create_custom_model():
     x = base_model.output
     x = GlobalAveragePooling2D(name='avg_pool')(x)
     x = Dropout(0.4)(x)
-
+    x = Dense(1024, activation='relu')(x)
+    x = Dense(512, activation='relu')(x)
     discriminative_layer = Dense(CLASSES, activation='softmax')(x)
 
     model = Model(inputs=base_model.input, outputs=discriminative_layer)
@@ -77,39 +79,58 @@ def do_training(training_folder_path, output_model_dir, steps_per_epoch, epoch, 
         update_freq='epoch'
     )
 
+    # save model at every epoch
+    checkpoint = ModelCheckpoint(os.path.join(output_model_dir, 'checkpoint') + '/checkpoint-{epoch:02d}.mdl', monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+    if output_model_dir.split(':')[0] == 'gs':
+        checkpoint = ModelCheckpointGc.ModelCheckpointGC(checkpoint)
+
     # callbacks
-    callbacks = [tensorboard]
+    if output_model_dir.split(':')[0] == 'gs':
+        callbacks = [checkpoint]
+    else:
+        callbacks = [tensorboard, checkpoint]
 
     # dataset
     if training_folder_path.split(':')[0] == 'gs':
-        train_dataset, label_dataset, total_files = DatasetUtil.load_dataset(training_folder_path, batch_size)
+        train_dataset, label_dataset, total_files = DatasetUtil.load_dataset(training_folder_path)
+        # train_dataset = DatasetUtil.load_dataset(training_folder_path, batch_size)
     else:
-        train_dataset = DatasetUtil.load_dataset(training_folder_path, batch_size)
+        #train_dataset = DatasetUtil.load_dataset_flow_from_dir(training_folder_path, batch_size)
+        train_dataset, label_dataset, total_files = DatasetUtil.load_local_dataset(training_folder_path)
 
     # load the model
     inception_model = create_custom_model()
     print(inception_model.summary())
 
-    # create the optimizer
-    rms_prop = RMSprop(lr=learning_rate, rho=0.9, epsilon=1.0, decay=0.9)
-
     # train the model
-    inception_model.compile(loss='categorical_crossentropy', optimizer=rms_prop, metrics=['accuracy'])
+    inception_model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 
     # train the model
     if training_folder_path.split(':')[0] == 'gs':
         history = inception_model.fit(train_dataset
-                                        , label_dataset
-                                        , batch_size=batch_size
-                                        , epochs=epoch
-                                        , verbose=2
-                                        , callbacks=callbacks)
-    else:
-        history = inception_model.fit_generator(train_dataset
-                                      , steps_per_epoch=steps_per_epoch
+                                      , label_dataset
+                                      , batch_size=batch_size
                                       , epochs=epoch
                                       , verbose=2
                                       , callbacks=callbacks)
+        # history = inception_model.fit_generator(train_dataset
+        #                                         , steps_per_epoch=steps_per_epoch
+        #                                         , epochs=epoch
+        #                                         , verbose=2
+        #                                         , callbacks=callbacks)
+    else:
+        history = inception_model.fit_generator(train_dataset
+                                                , steps_per_epoch=steps_per_epoch
+                                                , epochs=epoch
+                                                , verbose=2
+                                                , callbacks=callbacks)
+        # history = inception_model.fit(train_dataset
+        #                               , label_dataset
+        #                               , validation_split=0.2
+        #                               , batch_size=batch_size
+        #                               , epochs=epoch
+        #                               , verbose=2
+        #                               , callbacks=callbacks)
 
     # save the model
     if training_folder_path.split(':')[0] == 'gs':
@@ -119,4 +140,5 @@ def do_training(training_folder_path, output_model_dir, steps_per_epoch, epoch, 
         inception_model.save(os.path.join(output_model_dir, 'inception-v3-model.h5'))
 
     # show history
-    #show_history(history)
+    if training_folder_path.split(':')[0] != 'gs':
+        show_history(history)

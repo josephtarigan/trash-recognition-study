@@ -21,7 +21,7 @@ def get_labels():
     return labels
 
 
-def get_dataset(path):
+def load_local_dataset(path):
     x = list()
     y = list()
 
@@ -33,10 +33,10 @@ def get_dataset(path):
             class_name = class_names[len(class_names) - 1]
 
             x.append(a)
-            y.append(labels.get(class_name))
+            y.append(get_labels().get(class_name))
 
     y = to_categorical(y, len(get_labels()))
-    return np.array(x), y
+    return np.array(x), y, 0
 
 
 '''
@@ -47,47 +47,63 @@ if the path is a local path, then it will directly load the data from given path
 '''
 
 
-def load_dataset(path, batch_size):
+def load_dataset(path):
+    x = list()
+    y = list()
+    client = storage.Client()
+    bucket = client.get_bucket(path.split('//')[1].split('/')[0])
+    blobs = list(bucket.list_blobs(prefix=path.split('//')[1].split('/')[1]))
+    total_files = len(blobs)
+
+    for blob in blobs:
+        dirs = blob.name.split('/')
+        if blob.content_type != 'image/jpeg':
+            continue
+        else:
+            class_name = dirs[1]
+            gs_name = '{0}/{1}'.format('gs://' + path.split('//')[1].split('/')[0], blob.name)
+            f = BytesIO()
+            blob.download_to_file(f)
+            i_f = load_img(f)
+            a = img_to_array(i_f)
+
+            x.append(a)
+            y.append(get_labels().get(class_name))
+
+    print('{0}{1}{2}'.format('loaded ', len(x), ' images'))
+
+    xx = np.array(x)
+    yy = to_categorical(y, len(get_labels()))
+    x = None
+    y = None
+
+    return xx, yy, total_files
+
+    # gcs_dir = './{0}/'.format(path.split('//')[1].split('/')[1])
+    # print('GCS dir is {0}'.format(gcs_dir))
+
+    # train_generator = datagen.flow_from_directory(
+    #     directory=gcs_dir,
+    #     target_size=(244, 244),
+    #     class_mode='categorical',
+    #     shuffle=True,
+    #     batch_size=batch_size
+    # )
+    #
+    # return train_generator
+
+
+def load_dataset_flow_from_dir(path, batch_size):
     datagen = ImageDataGenerator()
+    train_generator = datagen.flow_from_directory(
+        directory=path,
+        target_size=(244, 244),
+        class_mode='categorical',
+        shuffle=True,
+        batch_size=batch_size
+    )
 
-    if path.split(':')[0] == 'gs':
-        x = list()
-        y = list()
-        client = storage.Client()
-        bucket = client.get_bucket(path.split('//')[1].split('/')[0])
-        blobs = list(bucket.list_blobs(prefix=path.split('//')[1].split('/')[1]))
-        total_files = len(blobs)
-
-        for blob in blobs:
-            dirs = blob.name.split('/')
-            if blob.content_type != 'image/jpeg':
-                continue
-            else:
-                class_name = dirs[1]
-                gs_name = '{0}/{1}'.format('gs://' + path.split('//')[1].split('/')[0], blob.name)
-                f = BytesIO()
-                blob.download_to_file(f)
-                i_f = load_img(f)
-                a = img_to_array(i_f)
-
-                x.append(a)
-                y.append(get_labels().get(class_name))
-
-        print('{0}{1}{2}'.format('loaded ', len(x), ' images'))
-
-        return np.array(x), to_categorical(y, len(get_labels())), total_files
-    else:
-        # x, y = get_training_data(path)
-        # return datagen.flow(x, y, shuffle=True), y
-        train_generator = datagen.flow_from_directory(
-            directory=path,
-            target_size=(244, 244),
-            class_mode='categorical',
-            shuffle=True,
-            batch_size=batch_size
-        )
-
-        return train_generator
+    return train_generator
 
 
 def load_random_data_as_validation(path):
