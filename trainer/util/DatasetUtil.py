@@ -106,20 +106,21 @@ def load_dataset_flow_from_dir(path, batch_size):
     return train_generator
 
 
-def load_random_data_as_validation(path):
+def load_random_data_as_validation(path, batch_size, classes):
     datagen = ImageDataGenerator(
         horizontal_flip=True,
         vertical_flip=True,
-        rotation_range=180,
-        width_shift_range=200.0,
-        height_shift_range=200.0
+        rotation_range=40,
+        width_shift_range=50.0,
+        height_shift_range=50.0
     )
     train_generator = datagen.flow_from_directory(
         directory=path,
         target_size=(244, 244),
         class_mode='categorical',
-        shuffle=False,
+        classes=classes,
+        shuffle=True,
         seed=42,
-        batch_size=24
+        batch_size=batch_size
     )
-    return train_generator
+    return train_generator, train_generator.class_indices
