@@ -7,7 +7,7 @@ REQUIRED_PACKAGES = ['Keras==2.2.4',
                      'h5py==2.9.0',
                      'matplotlib==3.0.3',
                      'tensorflow-gpu==1.14.0',
-                     'Pillow==6.1.0']
+                     'Pillow==6.2.1']
 
 setup(
     name='trash-recognition-trainer',

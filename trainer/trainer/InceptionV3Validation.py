@@ -1,7 +1,7 @@
 import os
 import argparse
 from keras.models import load_model
-from util import DatasetUtil
+from trainer.util import DatasetUtil
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

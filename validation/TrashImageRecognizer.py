@@ -1,8 +1,8 @@
 import os
 import argparse
 import numpy as np
-from keras.preprocessing import image
-from keras.models import load_model
+from tensorflow.keras.preprocessing import image
+from tensorflow.keras.models import load_model
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

@@ -5,10 +5,10 @@ joseph.tarigan@gmail.com
 import os
 
 import matplotlib.pyplot as plt
-from keras.applications.inception_v3 import InceptionV3
-from keras.callbacks import TensorBoard, ModelCheckpoint
-from keras.layers import GlobalAveragePooling2D, Dropout, Dense, Input
-from keras.models import Model
+from tensorflow.keras.applications.inception_v3 import InceptionV3
+from tensorflow.keras.callbacks import TensorBoard, ModelCheckpoint
+from tensorflow.keras.layers import GlobalAveragePooling2D, Dropout, Dense, Input
+from tensorflow.keras.models import Model
 from tensorflow.python.lib.io import file_io
 
 from trainer.util import DatasetUtil
@@ -119,18 +119,18 @@ def do_training(training_folder_path, output_model_dir, steps_per_epoch, epoch, 
         #                                         , verbose=2
         #                                         , callbacks=callbacks)
     else:
-        history = inception_model.fit_generator(train_dataset
-                                                , steps_per_epoch=steps_per_epoch
-                                                , epochs=epoch
-                                                , verbose=2
-                                                , callbacks=callbacks)
-        # history = inception_model.fit(train_dataset
-        #                               , label_dataset
-        #                               , validation_split=0.2
-        #                               , batch_size=batch_size
-        #                               , epochs=epoch
-        #                               , verbose=2
-        #                               , callbacks=callbacks)
+        # history = inception_model.fit_generator(train_dataset
+        #                                         , steps_per_epoch=steps_per_epoch
+        #                                         , epochs=epoch
+        #                                         , verbose=2
+        #                                         , callbacks=callbacks)
+        history = inception_model.fit(train_dataset
+                                      , label_dataset
+                                      , validation_split=0.2
+                                      , batch_size=batch_size
+                                      , epochs=epoch
+                                      , verbose=2
+                                      , callbacks=callbacks)
 
     # save the model
     if training_folder_path.split(':')[0] == 'gs':

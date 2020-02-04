@@ -36,7 +36,7 @@ def load_local_dataset(path):
             y.append(get_labels().get(class_name))
 
     y = to_categorical(y, len(get_labels()))
-    return np.array(x), y, 0
+    return np.array(x), y, 6
 
 
 '''

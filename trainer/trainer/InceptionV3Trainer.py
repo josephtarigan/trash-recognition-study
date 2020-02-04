@@ -1,6 +1,5 @@
 import argparse
-import os
-from trainer import TrashRecognitionInceptionV3Custom1
+from trainer.model import TrashRecognitionInceptionV3Custom1
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -48,7 +47,6 @@ if __name__ == '__main__':
     )
 
     args, _ = parser.parse_known_args()
-    print(args)
 
     # if args.training_set_folder[0].split(':')[0] == 'gs':
     #     print('Copying files from {0} to {1}'.format(args.training_set_folder[0], '.'))
