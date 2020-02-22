@@ -4,7 +4,11 @@ import argparse
 from keras.models import model_from_json
 from trainer.util import DatasetUtil
 
-
+'''
+Model validation utility
+Output: Filename, Preticted class
+In csv format
+'''
 def validate(model_path, dataset_path, steps, output_path):
     with open(model_path, 'r') as json_model:
         inception_model = model_from_json(json_model.read())

@@ -1,1 +1,1 @@
-gcloud ai-platform local train --package-path trainer/ --module-name trainer.InceptionV3Trainer -- --training-set-folder D:/Workspaces/python/TrashRecognition/trainer/dataset/ --output-dir D:/Workspaces/python/output/
+gcloud ai-platform local train --package-path trainer/ --module-name trainer.trainer.InceptionV3Trainer -- --training-set-folder D:/Workspaces/python/TrashRecognition/trainer/dataset/ --output-dir D:/Workspaces/python/output/
